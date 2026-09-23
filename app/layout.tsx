@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Kenteofi | Every talent deserves its moment',
-  description: 'Kenteofi helps people grow, build talent, and prepare for moments worth celebrating.',
+  title: 'Kenteofi | Catalyzing systemic change. Building talents',
+  description: 'Kenteofi is a youth-centred NGO supporting excellence in pioneers of tomorrow and preparing talents for socio economic transformation.',
   generator: 'v0.app',
   icons: {
     icon: '/kenteofi-logo.png',
