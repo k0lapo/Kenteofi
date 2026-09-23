@@ -109,7 +109,7 @@ export default function Page() {
         </div>
         <div className="mx-auto w-full max-w-md">
           <div className="overflow-hidden border border-border bg-card p-3 shadow-sm">
-            <img src="/workshop-poster.jpeg" alt="Research poster inviting alumni to share their voice about closing skill gaps" className="h-auto w-full object-cover" />
+            <img src="/kenteofi-research-flyer.png" alt="Kenteofi research flyer inviting alumni to share their voice about closing skill gaps" className="h-auto w-full object-cover" />
           </div>
           <p className="mt-4 text-center text-sm text-muted-foreground">An invitation to share experience and help shape better opportunities for young Nigerians.</p>
         </div>
