@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /volunteers/{volunteerId} {
+      allow create: if request.resource.data.keys().hasAll([
+        'firstName',
+        'lastName',
+        'age',
+        'sex',
+        'email',
+        'whatsappNumber',
+        'university',
+        'courseStudied',
+        'educationLevel',
+        'convenientTime',
+        'createdAt',
+        'status'
+      ]);
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['questionnaireStatus', 'questionnaireType']);
+      allow read, delete: if false;
+    }
+
+    match /questionnaires/{responseId} {
+      allow create: if request.resource.data.keys().hasAll([
+        'volunteerId',
+        'email',
+        'questionnaireType',
+        'answers',
+        'createdAt'
+      ]);
+      allow read, update, delete: if false;
+    }
+  }
+}

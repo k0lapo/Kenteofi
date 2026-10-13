@@ -3,20 +3,25 @@
 import { FormEvent, ReactNode, useState } from 'react'
 import { ArrowRight, CheckCircle2, Clock3, Mail, MapPin, Menu, Phone, Users, X } from 'lucide-react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { QuestionnaireModal } from '@/components/questionnaires/modal'
 import { db } from '@/lib/firebase'
+import { getQuestionnaireType, QuestionnaireType, VolunteerProfile } from '@/lib/questionnaire'
 
 const scheduleOptions = [
-  'Session 1 · 16th Sept · 12:00–1:00pm',
-  'Session 2 · 16th Sept · 1:00–2:00pm',
-  'Session 3 · 16th Sept · 2:00–3:00pm',
-  'Session 4 · 17th Sept · 12:00–1:00pm',
-  'Session 5 · 17th Sept · 1:00–2:00pm',
+  'Session 1 · Friday 6th Nov · 5:00–6:00pm',
+  'Session 2 · Friday 6th Nov · 7:00–8:00pm',
+  'Session 3 · Saturday 7th Nov · 12:00–1:00pm',
+  'Session 4 · Saturday 7th Nov · 2:00–3:00pm',
+  'Session 5 · Saturday 7th Nov · 4:00–5:00pm',
+  'Session 6 · Saturday 7th Nov · 6:00–7:00pm',
 ]
 const educationOptions = ['Secondary school', 'Diploma / NCE', 'Undergraduate', 'Bachelor’s degree', 'Master’s degree', 'Doctorate', 'Other']
 
 export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [questionnaire, setQuestionnaire] = useState<{ type: QuestionnaireType; profile: VolunteerProfile } | null>(null)
+  const [questionnaireDone, setQuestionnaireDone] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,9 +50,21 @@ export default function Page() {
     }
 
     try {
-      await addDoc(collection(db, 'volunteers'), volunteerData)
+      const volunteerRef = await addDoc(collection(db, 'volunteers'), volunteerData)
 
       setStatus('success')
+      setQuestionnaireDone(false)
+      setQuestionnaire({
+        type: getQuestionnaireType(volunteerData.educationLevel),
+        profile: {
+          volunteerId: volunteerRef.id,
+          name: `${volunteerData.firstName} ${volunteerData.lastName}`.trim(),
+          age: volunteerData.age,
+          educationalLevel: volunteerData.educationLevel,
+          courseOfStudy: volunteerData.courseStudied,
+          email: volunteerData.email,
+        },
+      })
       formElement.reset()
     } catch (error) {
       console.error('Error submitting form to Firebase:', error)
@@ -60,7 +77,7 @@ export default function Page() {
       <header className="border-b border-border bg-card/95">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10" aria-label="Main navigation">
           <a href="#top" aria-label="Kenteofi home">
-            <img src="/kenteofi-logo.png" alt="Kenteofi" className="h-14 w-32 object-contain" />
+            <img src="/kenteofi-logo.png?v=2" alt="Kenteofi" className="h-14 w-32 bg-transparent object-contain" />
           </a>
           <div className="hidden items-center gap-8 text-sm font-medium md:flex">
             <a href="#about" className="hover:text-primary">About</a>
@@ -212,7 +229,7 @@ export default function Page() {
         <div className="mt-14 border-t border-border pt-10">
           <h3 className="font-serif text-2xl font-semibold">Possible timelines</h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Choose the session that works best for you when you volunteer below.</p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {scheduleOptions.map((session) => (
               <div key={session} className="border border-border bg-card p-4">
                 <Clock3 className="text-primary" size={18} />
@@ -228,7 +245,7 @@ export default function Page() {
           <div className="lg:sticky lg:top-8">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">Volunteer</p>
             <h2 className="mt-4 font-serif text-4xl font-semibold leading-tight text-balance sm:text-5xl">Add your voice to the conversation.</h2>
-            <p className="mt-5 max-w-sm leading-7 text-primary-foreground/75">Tell us a little about yourself and choose a convenient time. We will follow up with the research session details.</p>
+            <p className="mt-5 max-w-sm leading-7 text-primary-foreground/75">Tell us a little about yourself and choose a convenient time. You will then complete a short questionnaire so we can better understand your experience.</p>
           </div>
           <form onSubmit={handleSubmit} className="rounded-md bg-card p-6 text-foreground shadow-sm sm:p-9">
             <div className="grid gap-5 sm:grid-cols-2">
@@ -252,7 +269,14 @@ export default function Page() {
             <button type="submit" disabled={status === 'loading'} className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-primary px-5 py-3.5 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
               {status === 'loading' ? 'Sending…' : 'Submit volunteer interest'}
             </button>
-            {status === 'success' && <p className="mt-4 text-sm text-primary">Thank you. We will be in touch with the research session details.</p>}
+            {status === 'success' && questionnaire && !questionnaireDone && (
+              <p className="mt-4 text-sm text-primary">Please complete the questionnaire to finish your volunteer submission.</p>
+            )}
+            {status === 'success' && questionnaireDone && (
+              <p className="mt-4 text-sm text-primary">
+                Thank you. Your volunteer details and questionnaire responses have been received. We will be in touch with the research session details.
+              </p>
+            )}
             {status === 'error' && <p className="mt-4 text-sm text-destructive">We could not submit your details. Please try again or contact us directly.</p>}
           </form>
         </div>
@@ -268,7 +292,7 @@ export default function Page() {
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
               <ContactItem icon={<Mail size={20} />} label="Email" value="volunteer@kenteofi.com" />
-              <ContactItem icon={<Phone size={20} />} label="Phone / WhatsApp" value="+234 805 211 9298" />
+              <ContactItem icon={<Phone size={20} />} label="Phone / WhatsApp" value="+234 906 580 4802" />
               <ContactItem icon={<MapPin size={20} />} label="Address" value="Lagos, Nigeria" />
               <ContactItem icon={<Users size={20} />} label="Enquiries" value="Research and partnership enquiries welcome" />
             </div>
@@ -277,10 +301,19 @@ export default function Page() {
       </section>
       <footer className="border-t border-border bg-background px-6 py-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <img src="/kenteofi-logo.png" alt="Kenteofi" className="h-12 w-28 object-contain" />
+          <img src="/kenteofi-logo.png?v=2" alt="Kenteofi" className="h-12 w-28 bg-transparent object-contain" />
           <p className="text-sm text-muted-foreground">Catalyzing systemic change. Building talents.</p>
         </div>
       </footer>
+      <QuestionnaireModal
+        open={Boolean(questionnaire)}
+        type={questionnaire?.type ?? null}
+        profile={questionnaire?.profile ?? null}
+        onClose={() => setQuestionnaire(null)}
+        onSubmitted={() => {
+          setQuestionnaireDone(true)
+        }}
+      />
     </main>
   )
 }
