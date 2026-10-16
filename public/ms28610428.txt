@@ -1,0 +1,5 @@
+﻿{
+  "Description": "Domain ownership verification file for Microsoft 365 - place in the website root",
+  "Domain": "kenteofi.com",
+  "Id": "4210ea72-25a6-4f4c-a246-8ec43723b602"
+}
